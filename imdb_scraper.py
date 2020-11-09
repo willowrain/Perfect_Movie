@@ -63,7 +63,6 @@ def get_movies():
 
     
 def get_titles(soup):
-    titles = []
     tags = soup.find('div', class_="title_wrapper")
     title_tag = tags.find('h1')
     t = re.search('>[(&amp;|&)½?/!0-9 éa-zA-Z,.:\'\·-]+',str(title_tag))
@@ -71,8 +70,7 @@ def get_titles(soup):
    
 
 def get_years(soup):
-    years = []
-    tags = soup.find('div', class_="title_wrapper")
+   # tags = soup.find('div', class_="title_wrapper") #likely not necessary (redundant)
     year_tag = soup.find('span', id='titleYear')
     y = re.search('>[0-9]+<', str(year_tag))
     return(y.group(0).replace('>','').replace('<',''))
@@ -271,43 +269,45 @@ if __name__ == "__main__":
     awards_list = []
     broken_list = []
 
-    for i in range (20000,20100): #title_codes derived from get_ids
+    for i in range (0,20000): #title_codes derived from get_ids
         code = title_codes[i]
 
-        new_page = page + code
-        task_main = new_page
-        response_main = requests.get(task_main)
-        data_main = response_main.text
-        soup_main = Soup(data_main, 'lxml')
-
         try:
-            next_budget = (get_budget(soup_main)) #feed soup
-            if (next_budget > 0):
-                try:
-                    next_title = (get_titles(soup_main))
-                    next_year = (get_years(soup_main))
-                    next_actor = (get_actors(soup_main)) #feed soup
-                    next_director = (get_directors(soup_main)) #feed soup
-                    next_rating = (get_mpaa_rating(soup_main)) #feed soup
-                    next_keyword = (get_keywords(soup_main)) #feed soup
-                    next_genre = (get_genres(soup_main)) #feed soup
-                    next_gross = (get_gross(soup_main)) #feed soup
-                    next_score = (get_scores(new_page)) #feed page
-                    next_award = (get_awards(new_page)) #feed page
-                    codes_list.append(code)
-                    titles_list.append(next_title)
-                    years_list.append(next_year)
-                    actors_list.append(next_actor)
-                    directors_list.append(next_director)
-                    ratings_list.append(next_rating)
-                    keywords_list.append(next_keyword)
-                    genres_list.append(next_genre)
-                    budgets_list.append(next_budget)
-                    gross_list.append(next_gross)
-                    scores_list.append(next_score)
-                    awards_list.append(next_award)
-                except:
-                    broken_list.append(code)
+            new_page = page + code
+            task_main = new_page
+            response_main = requests.get(task_main)
+            data_main = response_main.text
+            soup_main = Soup(data_main, 'lxml')
+            try:
+                next_budget = (get_budget(soup_main)) #feed soup
+                next_gross = (get_gross(soup_main)) #feed soup
+                if ((next_budget > 0) & (next_gross > 0)):
+                    try:
+                        next_title = (get_titles(soup_main))
+                        next_year = (get_years(soup_main)) #feed soup
+                        next_actor = (get_actors(soup_main)) #feed soup
+                        next_director = (get_directors(soup_main)) #feed soup
+                        next_rating = (get_mpaa_rating(soup_main)) #feed soup
+                        next_keyword = (get_keywords(soup_main)) #feed soup
+                        next_genre = (get_genres(soup_main)) #feed soup
+                        next_score = (get_scores(new_page)) #feed page
+                        next_award = (get_awards(new_page)) #feed page
+                        codes_list.append(code)
+                        titles_list.append(next_title)
+                        years_list.append(next_year)
+                        actors_list.append(next_actor)
+                        directors_list.append(next_director)
+                        ratings_list.append(next_rating)
+                        keywords_list.append(next_keyword)
+                        genres_list.append(next_genre)
+                        budgets_list.append(next_budget)
+                        gross_list.append(next_gross)
+                        scores_list.append(next_score)
+                        awards_list.append(next_award)
+                    except:
+                        broken_list.append(code)
+            except:
+                broken_list.append(code)
         except:
             broken_list.append(code)
 
@@ -315,7 +315,7 @@ if __name__ == "__main__":
 
     print(broken_list)
     
-    # One of these list is not like the others doot doot
+    
     data = {'Code': codes_list,
             'Title': titles_list,
             'Year': years_list,
@@ -331,7 +331,7 @@ if __name__ == "__main__":
     
     
     pd.set_option('display.max_columns',None)
-    compiled_df.to_csv(r'C:\Users\christian\Desktop\gitrepos\Perfect_Movie\test_dataframe.csv')
+    compiled_df.to_csv(r'test_dataframe_1.csv')
     
 
     
