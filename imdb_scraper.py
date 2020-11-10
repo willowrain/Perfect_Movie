@@ -98,17 +98,13 @@ def get_mpaa_rating(soup:str):
     '''
     mpaa_rating = []
 
-    tags = soup.find('div', id="titleStoryLine")
-    mpaa = tags.find_all('span')
-    target = "Rated"
-    for rating in mpaa:
-        rating = str(rating)
-        if target in rating:
-            mpaa_rating = rating.split(' ')
-            return(mpaa_rating[0])
-        else:
-            mpaa_rating = 'Not Rated'
-            return(mpaa_rating)
+    tags = soup_main.find('div', class_="title_wrapper")
+    mpaa = tags.find_all("div", class_="subtext")
+    r = re.search('\s[a-zA-Z0-9/-]+\s',str(mpaa))
+    rating = str(r.group(0).strip())
+    if "Not" in rating:
+        rating += " Rated"
+    return(rating)
 
 
 def get_keywords(soup:str):
@@ -250,11 +246,6 @@ if __name__ == "__main__":
 
     page = 'https://www.imdb.com/title/'
 
-    task_main = page
-    response_main = requests.get(task_main)
-    data_main = response_main.text
-    soup_main = Soup(data_main, 'lxml')
-
     codes_list = []
     titles_list = []
     years_list = []
@@ -268,9 +259,17 @@ if __name__ == "__main__":
     scores_list = []
     awards_list = []
     broken_list = []
+    extended_list = []
+    reason_list = []
 
-    for i in range (0,20000): #title_codes derived from get_ids
+    
+    for i in range (20000,40000):
         code = title_codes[i]
+    #failed_codes = []
+    #for i in range (0,len(failed_codes)): #title_codes derived from get_ids
+        #code = failed_codes[i]
+
+        reasons = []
 
         try:
             new_page = page + code
@@ -280,40 +279,97 @@ if __name__ == "__main__":
             soup_main = Soup(data_main, 'lxml')
             try:
                 next_budget = (get_budget(soup_main)) #feed soup
-                next_gross = (get_gross(soup_main)) #feed soup
-                if ((next_budget > 0) & (next_gross > 0)):
-                    try:
-                        next_title = (get_titles(soup_main))
-                        next_year = (get_years(soup_main)) #feed soup
-                        next_actor = (get_actors(soup_main)) #feed soup
-                        next_director = (get_directors(soup_main)) #feed soup
-                        next_rating = (get_mpaa_rating(soup_main)) #feed soup
-                        next_keyword = (get_keywords(soup_main)) #feed soup
-                        next_genre = (get_genres(soup_main)) #feed soup
-                        next_score = (get_scores(new_page)) #feed page
-                        next_award = (get_awards(new_page)) #feed page
-                        codes_list.append(code)
-                        titles_list.append(next_title)
-                        years_list.append(next_year)
-                        actors_list.append(next_actor)
-                        directors_list.append(next_director)
-                        ratings_list.append(next_rating)
-                        keywords_list.append(next_keyword)
-                        genres_list.append(next_genre)
-                        budgets_list.append(next_budget)
-                        gross_list.append(next_gross)
-                        scores_list.append(next_score)
-                        awards_list.append(next_award)
-                    except:
-                        broken_list.append(code)
             except:
+                reasons.append("budget")
+                next_budget = 1
                 broken_list.append(code)
+            try:    
+                next_gross = (get_gross(soup_main)) #feed soup
+            except:
+                reasons.append("gross")
+                next_gross = 1
+                if code not in broken_list:
+                    broken_list.append(code)
+            if ((next_budget > 0) & (next_gross > 0)):
+                try:
+                    next_title = (get_titles(soup_main))
+                except:
+                    reasons.append("title")
+                    if code not in broken_list:
+                        broken_list.append(code)
+                try:
+                    next_year = (get_years(soup_main)) #feed soup
+                except:
+                    reasons.append("year")
+                    if code not in broken_list:
+                        broken_list.append(code)
+                try:
+                    next_actor = (get_actors(soup_main)) #feed soup
+                except:
+                    reasons.append("actors")
+                    if code not in broken_list:
+                        broken_list.append(code)
+                try:
+                    next_director = (get_directors(soup_main)) #feed soup
+                except:
+                    reasons.append("directors")
+                    if code not in broken_list:
+                        broken_list.append(code)
+                try:
+                    next_rating = (get_mpaa_rating(soup_main)) #feed soup
+                except:
+                    reasons.append("rating")
+                    if code not in broken_list:
+                        broken_list.append(code)
+                try:
+                    next_keyword = (get_keywords(soup_main)) #feed soup
+                except:
+                    reasons.append("keywords")
+                    if code not in broken_list:
+                        broken_list.append(code)
+                try:
+                    next_genre = (get_genres(soup_main)) #feed soup
+                except:
+                    reasons.append("genre")
+                    if code not in broken_list:
+                        broken_list.append(code)
+                try:
+                    next_score = (get_scores(new_page)) #feed page
+                except:
+                    reasons.append("score")
+                    if code not in broken_list:
+                        broken_list.append(code)
+                try:
+                    next_award = (get_awards(new_page)) #feed page
+                except:
+                    reasons.append("awards")
+                    if code not in broken_list:
+                        broken_list.append(code)
+
+                if code not in broken_list:
+                    codes_list.append(code)
+                    titles_list.append(next_title)
+                    years_list.append(next_year)
+                    actors_list.append(next_actor)
+                    directors_list.append(next_director)
+                    ratings_list.append(next_rating)
+                    keywords_list.append(next_keyword)
+                    genres_list.append(next_genre)
+                    budgets_list.append(next_budget)
+                    gross_list.append(next_gross)
+                    scores_list.append(next_score)
+                    awards_list.append(next_award)
+
         except:
             broken_list.append(code)
+            reasons.append("soup")
+
+        extended_list.append(reasons)
 
         print(i)
 
-    print(broken_list)
+    reason_list = [x for x in extended_list if x != []]
+    
     
     
     data = {'Code': codes_list,
@@ -331,9 +387,18 @@ if __name__ == "__main__":
     
     
     pd.set_option('display.max_columns',None)
-    compiled_df.to_csv(r'test_dataframe_1.csv')
-    
+    compiled_df.to_csv(r'compiled_dataframe_2.csv')
 
+    print(broken_list)
+    print(reason_list)
+
+    if (len(broken_list) > 0):
+        fail_data = {'Code': broken_list,
+                    'PoF': reason_list}
+        failed_df = pd.DataFrame(fail_data)
+        failed_df.to_csv(r'failed_codes_2.csv')
+    
+ 
     
     
 
